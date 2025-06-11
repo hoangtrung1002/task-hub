@@ -28,12 +28,14 @@ import {
 
 import { Link } from "react-router";
 import type { ZodType } from "zod";
+import { Loader2 } from "lucide-react";
 
 interface Props<T extends FieldValues> {
   type: "SIGN_IN" | "SIGN_UP";
   schema: ZodType<T, any, any>;
   defaultValues: T;
   onSubmit: (data: T) => void;
+  isPending?: boolean;
 }
 
 const AuthForm = <T extends FieldValues>({
@@ -41,6 +43,7 @@ const AuthForm = <T extends FieldValues>({
   schema,
   defaultValues,
   onSubmit,
+  isPending,
 }: Props<T>) => {
   const isSignIn = type === "SIGN_IN";
   const form: UseFormReturn<T> = useForm({
@@ -105,8 +108,17 @@ const AuthForm = <T extends FieldValues>({
                   )}
                 />
               ))}
-              <Button type="submit" className="w-full">
-                {isSignIn ? "Sign In" : "Sign Up"}
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="animate-spin" />{" "}
+                    {isSignIn ? "SignIn..." : "SignUp..."}
+                  </>
+                ) : isSignIn ? (
+                  "Sign In"
+                ) : (
+                  "Sign Up"
+                )}
               </Button>
               <CardFooter className="flex items-center justify-center mt-6">
                 <div className="flex items-center justify-center">

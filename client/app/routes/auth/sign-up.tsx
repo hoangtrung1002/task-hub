@@ -1,11 +1,27 @@
 import AuthForm from "@/components/auth-form";
+import { useSignUpMutation } from "@/hooks/use-auth";
 import { signUpSchema } from "@/lib/schema";
+import { toast } from "sonner";
 import { z } from "zod";
 
-type SignUpFormData = z.infer<typeof signUpSchema>;
+export type SignUpFormData = z.infer<typeof signUpSchema>;
 const SignUp = () => {
+  const { mutate, isPending } = useSignUpMutation();
   const handleOnSubmit = (data: SignUpFormData) => {
-    console.log(data);
+    mutate(data, {
+      onSuccess() {
+        toast.success(
+          "Account created successfully! Please check your email to verify your account."
+        );
+      },
+      onError(error: any) {
+        const errorMessage =
+          error.response?.data?.message || "An error occurred";
+        console.log(error);
+
+        toast.error(errorMessage);
+      },
+    });
   };
 
   return (
@@ -14,6 +30,7 @@ const SignUp = () => {
       schema={signUpSchema}
       defaultValues={{ email: "", password: "", name: "", confirmPassword: "" }}
       onSubmit={handleOnSubmit}
+      isPending={isPending}
     />
   );
 };

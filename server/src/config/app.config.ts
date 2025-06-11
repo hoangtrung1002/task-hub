@@ -6,7 +6,7 @@ const appConfig = () => ({
   BASE_PATH: getEnv("BASE_PATH", "/api/v1"),
   MONGO_URI: getEnv("MONGO_URI", ""),
   JWT_SECRET: getEnv("JWT_SECRET", ""),
-  FRONTEND_URL: getEnv("FRONTEND_URL", "localhost"),
+  FRONTEND_URL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 });
 
 export const config = appConfig();
