@@ -3,9 +3,14 @@ import { validateRequest } from "zod-express-middleware";
 import {
   loginController,
   registerController,
+  verifyEmailController,
 } from "../controller/auth.controller";
 import { emailValidationMiddleware } from "../middlewares/arject.middleware";
-import { loginSchema, registerSchema } from "../validations/auth.validation";
+import {
+  loginSchema,
+  registerSchema,
+  tokenSchema,
+} from "../validations/auth.validation";
 
 const router = Router();
 
@@ -16,5 +21,9 @@ router.post(
   registerController
 );
 router.post("/login", validateRequest({ body: loginSchema }), loginController);
-
+router.post(
+  "/verify-email",
+  validateRequest({ body: tokenSchema }),
+  verifyEmailController
+);
 export const authRoutes = router;

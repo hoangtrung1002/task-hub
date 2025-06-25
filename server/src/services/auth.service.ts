@@ -6,6 +6,8 @@ import VerificationModel from "../models/verification.model";
 import {
   BadRequestException,
   ExternalServerException,
+  NotFoundException,
+  UnauthorizedException,
 } from "../utils/app-error";
 import { hashValue } from "../utils/bcrypt";
 import { sendEmail } from "../utils/send-email";
@@ -32,7 +34,7 @@ export async function registerService(body: {
     }).save({ session });
 
     const verificationToken = jwt.sign(
-      { userId: newUser._id, property: "email-verification" },
+      { userId: newUser._id, purpose: "email-verification" },
       config.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -62,3 +64,47 @@ export async function registerService(body: {
     throw error;
   }
 }
+
+export const verifyEmailService = async (token: string) => {
+  const payload = jwt.verify(token, config.JWT_SECRET);
+
+  if (!payload || typeof payload === "string") {
+    throw new UnauthorizedException("Unauthorized");
+  }
+  const { userId, purpose } = payload;
+  if (purpose !== "email-verification") {
+    throw new UnauthorizedException("Unauthorized");
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const verification = await VerificationModel.findOne({ token, userId });
+    if (!verification) {
+      throw new NotFoundException("Invalid credentials");
+    }
+    const isTokenExpired = verification.expiresAt < new Date();
+    if (isTokenExpired) {
+      throw new UnauthorizedException("Token expired");
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException("Invalid credentials");
+    }
+    user.isEmailVerified = true;
+    await user.save({ session });
+
+    await VerificationModel.findByIdAndDelete(verification._id).session(
+      session
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { HTTPSTATUS } from "../config/http.config";
 import { asyncHandler } from "../middlewares/asyncHandler.middleware";
-import { registerService } from "../services/auth.service";
+import { registerService, verifyEmailService } from "../services/auth.service";
 
 export const registerController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -15,4 +15,12 @@ export const registerController = asyncHandler(
 );
 export const loginController = asyncHandler(
   async (req: Request, res: Response) => {}
+);
+export const verifyEmailController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token } = req.body;
+    await verifyEmailService(token);
+
+    res.status(HTTPSTATUS.OK).json({ message: "Email verified successfully" });
+  }
 );
