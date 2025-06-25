@@ -1,32 +1,16 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../middlewares/asyncHandler.middleware";
-import UserModel from "../models/user.models";
-import { BadRequestException } from "../utils/app-error";
-import { hashValue } from "../utils/bcrypt";
 import { HTTPSTATUS } from "../config/http.config";
+import { asyncHandler } from "../middlewares/asyncHandler.middleware";
+import { registerService } from "../services/auth.service";
 
 export const registerController = asyncHandler(
   async (req: Request, res: Response) => {
-    try {
-      const { name, email, password } = req.body;
-      const existingUser = await UserModel.findOne({ email });
-      if (existingUser) throw new BadRequestException("Email already in use");
-      const hashedPassword = await hashValue(password);
-      const newUser = await UserModel.create({
-        name,
-        email,
-        password: hashedPassword,
-      });
+    const body = req.body;
+    await registerService(body);
 
-      res.status(HTTPSTATUS.CREATED).json({
-        message:
-          "Verification email sent to your email. Please check and verify your account.",
-      });
-    } catch (error) {
-      res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json({
-        message: "Internal server error",
-      });
-    }
+    res
+      .status(HTTPSTATUS.CREATED)
+      .json({ message: "User registered successfully" });
   }
 );
 export const loginController = asyncHandler(

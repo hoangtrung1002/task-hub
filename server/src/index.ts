@@ -6,6 +6,7 @@ import { config } from "./config/app.config";
 import connectDatabase from "./config/database.config";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
 import router from "./routes";
+import { botProtectionMiddleware } from "./middlewares/arject.middleware";
 
 const app = express();
 app.use(express.json());
@@ -18,6 +19,7 @@ app.use(
   })
 );
 app.use(morgan("dev"));
+app.use(botProtectionMiddleware);
 
 app.use(config.BASE_PATH, router);
 app.use(errorHandler);
