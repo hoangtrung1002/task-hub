@@ -1,11 +1,14 @@
-import type { User } from "@/types";
-import { createContext, useContext, useState } from "react";
+import type { LoginResponse, User } from "@/types";
+import { createContext, useContext, useEffect, useState } from "react";
+import { queryClient } from "./react-query-provider";
+import { useLocation, useNavigate } from "react-router";
+import { publicRoutes } from "@/lib";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (data: LoginResponse) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -15,15 +18,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const currentPath = useLocation().pathname;
+  const navigate = useNavigate();
+  const isPublicRoutes = publicRoutes.includes(currentPath);
 
-  const login = async (email: string, password: string) => {
-    console.log("Logging in");
+  // Check user is login
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoading(true);
+
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        setIsAuthenticated(true);
+        setUser(JSON.parse(userData));
+      } else {
+        setIsAuthenticated(false);
+        if (!isPublicRoutes) {
+          navigate("/sign-in");
+        }
+      }
+      setIsLoading(false);
+    };
+    checkAuth();
+  }, []);
+
+  // force-logout - an event will dispatch when something wrong that configured in axios
+  useEffect(() => {
+    const handleLogout = () => {
+      logout();
+      navigate("/sign-in");
+    };
+    window.addEventListener("force-logout", handleLogout);
+    return () => {
+      window.removeEventListener("force-logout", handleLogout);
+    };
+  }, []);
+
+  const login = async (data: LoginResponse) => {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    setUser(data.user);
+    setIsAuthenticated(true);
   };
 
   const logout = async () => {
-    console.log("Logging out");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
     setUser(null);
     setIsAuthenticated(false);
+    queryClient.clear();
   };
 
   const values = {
