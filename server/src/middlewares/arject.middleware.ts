@@ -12,7 +12,6 @@ export const botProtectionMiddleware = async (
 ) => {
   try {
     const decision = await ajBotProtection.protect(req, { requested: 5 });
-    console.log("Arcjet bot protection decision:", decision);
 
     if (decision.isDenied()) {
       if (decision.reason.isRateLimit()) {
@@ -58,7 +57,6 @@ export const emailValidationMiddleware = async (
   const email = req.body?.email;
   try {
     const decision = await ajEmailValidation.protect(req, { email });
-    console.log("Arcjet email validation decision:", decision);
 
     if (decision.isDenied()) {
       throw new BadRequestException("Invalid or blocked email");

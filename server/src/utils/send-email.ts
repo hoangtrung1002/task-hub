@@ -5,10 +5,13 @@ import { config } from "../config/app.config";
 sgMail.setApiKey(config.SEND_GRID_API_KEY);
 const fromEmail = config.FROM_EMAIL;
 
-export async function sendEmail(to: string, subject: string, content: string) {
+export async function sendEmail(to: string, verificationToken: string) {
+  const verificationLink = `${config.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+  const content = `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`;
+  const subject = "Email Verification";
   const msg = {
     to,
-    from: fromEmail,
+    from: `TaskHub <${fromEmail}>`,
     subject,
     html: content,
   };

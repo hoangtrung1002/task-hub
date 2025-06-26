@@ -9,8 +9,9 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "../utils/app-error";
-import { hashValue } from "../utils/bcrypt";
+import { compareValue, hashValue } from "../utils/bcrypt";
 import { sendEmail } from "../utils/send-email";
+import { jwtSign, verifyToken } from "../utils/jwtHelper";
 
 const EXPIRES_AT = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
 
@@ -33,11 +34,10 @@ export async function registerService(body: {
       password: hashedPassword,
     }).save({ session });
 
-    const verificationToken = jwt.sign(
-      { userId: newUser._id, purpose: "email-verification" },
-      config.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const verificationToken = jwtSign({
+      userId: newUser._id as string,
+      purpose: "email-verification",
+    });
 
     await new VerificationModel({
       userId: newUser._id,
@@ -46,10 +46,7 @@ export async function registerService(body: {
     }).save({ session });
 
     // SEND EMAIL
-    const verificationLink = `${config.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-    const emailContent = `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`;
-    const emailSubject = "Email Verification";
-    const isEmailSent = await sendEmail(email, emailSubject, emailContent);
+    const isEmailSent = await sendEmail(email, verificationToken);
 
     if (!isEmailSent)
       throw new ExternalServerException("Failed to send verification email");
@@ -65,8 +62,80 @@ export async function registerService(body: {
   }
 }
 
+type SafeUserData = Omit<ReturnType<UserDocument["toObject"]>, "password">;
+export async function loginInService(body: {
+  email: string;
+  password: string;
+}): Promise<{ userData: SafeUserData; token: string }> {
+  const { email, password } = body;
+  const user = await UserModel.findOne({ email }).select("+password");
+  if (!user) throw new BadRequestException("Invalid email or password");
+
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    if (!user.isEmailVerified) {
+      const existingVerification = await VerificationModel.findOne({
+        userId: user._id,
+      }).session(session);
+
+      if (existingVerification && existingVerification.expiresAt > new Date()) {
+        throw new BadRequestException(
+          "Email not verified. Please check your email"
+        );
+      } else {
+        await VerificationModel.findByIdAndDelete(
+          existingVerification._id
+        ).session(session);
+
+        const verificationToken = jwtSign({
+          userId: String(user._id),
+          purpose: "email-verification",
+        });
+
+        await new VerificationModel({
+          userId: user._id,
+          token: verificationToken,
+          expiresAt: new Date(Date.now() + EXPIRES_AT),
+        }).save({ session });
+        // SEND EMAIL
+        const isEmailSent = await sendEmail(email, verificationToken);
+
+        if (!isEmailSent)
+          throw new ExternalServerException(
+            "Failed to send verification email"
+          );
+      }
+    }
+    const isValidPassword = compareValue(password, user.password);
+    if (!isValidPassword)
+      throw new BadRequestException("Invalid email or password");
+
+    const token = jwtSign(
+      { userId: user._id.toString(), purpose: "login" },
+      "7d"
+    );
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const userData = user.toObject();
+    delete userData.password;
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return { userData, token };
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+}
+
 export const verifyEmailService = async (token: string) => {
-  const payload = jwt.verify(token, config.JWT_SECRET);
+  const payload = verifyToken(token);
 
   if (!payload || typeof payload === "string") {
     throw new UnauthorizedException("Unauthorized");
@@ -77,9 +146,9 @@ export const verifyEmailService = async (token: string) => {
   }
 
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
+    session.startTransaction();
     const verification = await VerificationModel.findOne({ token, userId });
     if (!verification) {
       throw new NotFoundException("Invalid credentials");
