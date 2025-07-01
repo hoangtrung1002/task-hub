@@ -1,14 +1,18 @@
 import { Router } from "express";
+import { z } from "zod";
 import { validateRequest } from "zod-express-middleware";
 import {
   loginController,
   registerController,
+  resetPasswordController,
   verifyEmailController,
+  verifyResetPasswordTokenController,
 } from "../controller/auth.controller";
 import { emailValidationMiddleware } from "../middlewares/arject.middleware";
 import {
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
   tokenSchema,
 } from "../validations/auth.validation";
 
@@ -25,5 +29,15 @@ router.post(
   "/verify-email",
   validateRequest({ body: tokenSchema }),
   verifyEmailController
+);
+router.post(
+  "/reset-password-request",
+  validateRequest({ body: z.string().email() }),
+  resetPasswordController
+);
+router.post(
+  "reset-password",
+  validateRequest({ body: resetPasswordSchema }),
+  verifyResetPasswordTokenController
 );
 export const authRoutes = router;

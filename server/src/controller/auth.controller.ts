@@ -4,6 +4,8 @@ import { asyncHandler } from "../middlewares/asyncHandler.middleware";
 import {
   loginInService,
   registerService,
+  resetPasswordService,
+  resetPasswordTokenService,
   verifyEmailService,
 } from "../services/auth.service";
 
@@ -35,5 +37,25 @@ export const verifyEmailController = asyncHandler(
     await verifyEmailService(token);
 
     res.status(HTTPSTATUS.OK).json({ message: "Email verified successfully" });
+  }
+);
+export const resetPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+    await resetPasswordService(email);
+
+    res
+      .status(HTTPSTATUS.OK)
+      .json({ message: "Reset password email sent successfully" });
+  }
+);
+
+export const verifyResetPasswordTokenController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token, newPassword, confirmPassword } = req.body;
+    await resetPasswordTokenService(token, newPassword, confirmPassword);
+    res.status(HTTPSTATUS.OK).json({
+      message: "Password reset successfully",
+    });
   }
 );

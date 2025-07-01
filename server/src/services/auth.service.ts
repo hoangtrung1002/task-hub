@@ -10,10 +10,11 @@ import {
   UnauthorizedException,
 } from "../utils/app-error";
 import { compareValue, hashValue } from "../utils/bcrypt";
-import { sendEmail } from "../utils/send-email";
+import { sendEmail, sendEmailResetPassword } from "../utils/send-email";
 import { jwtSign, verifyToken } from "../utils/jwtHelper";
 
 const EXPIRES_AT = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
+const RESET_PASSWORD_EXPIRES_AT = 15 * 60 * 1000; // 1 hour in milliseconds
 
 export async function registerService(body: {
   name: string;
@@ -35,7 +36,7 @@ export async function registerService(body: {
     }).save({ session });
 
     const verificationToken = jwtSign({
-      userId: newUser._id as string,
+      userId: newUser._id,
       purpose: "email-verification",
     });
 
@@ -62,11 +63,10 @@ export async function registerService(body: {
   }
 }
 
-type SafeUserData = Omit<ReturnType<UserDocument["toObject"]>, "password">;
 export async function loginInService(body: {
   email: string;
   password: string;
-}): Promise<{ userData: SafeUserData; token: string }> {
+}) {
   const { email, password } = body;
   const user = await UserModel.findOne({ email }).select("+password");
   if (!user) throw new BadRequestException("Invalid email or password");
@@ -112,10 +112,7 @@ export async function loginInService(body: {
     if (!isValidPassword)
       throw new BadRequestException("Invalid email or password");
 
-    const token = jwtSign(
-      { userId: user._id.toString(), purpose: "login" },
-      "7d"
-    );
+    const token = jwtSign({ userId: user._id, purpose: "login" }, "7d");
 
     user.lastLogin = new Date();
     await user.save();
@@ -177,3 +174,77 @@ export const verifyEmailService = async (token: string) => {
     throw error;
   }
 };
+
+export async function resetPasswordService(email: string) {
+  const user: UserDocument | null = await UserModel.findOne({ email });
+  if (!user) throw new BadRequestException("User not found");
+  if (!user.isEmailVerified) {
+    throw new BadRequestException("Please verify your email first.");
+  }
+
+  const verification = await VerificationModel.findOne({ useId: user._id });
+  if (verification && verification.expiresAt > new Date()) {
+    throw new BadRequestException("Reset password request already sent");
+  }
+  if (verification && verification.expiresAt < new Date()) {
+    await VerificationModel.findByIdAndDelete(verification._id);
+  }
+
+  const resetPasswordToken = jwtSign(
+    {
+      userId: user._id,
+      purpose: "reset-password",
+    },
+    "15m"
+  );
+
+  await VerificationModel.create({
+    userId: user._id,
+    token: resetPasswordToken,
+    expiresAt: new Date(Date.now() + RESET_PASSWORD_EXPIRES_AT),
+  });
+
+  const isEmailSent = await sendEmailResetPassword(email, resetPasswordToken);
+  if (!isEmailSent) {
+    throw new ExternalServerException("Failed to send reset password email");
+  }
+
+  return;
+}
+
+export async function resetPasswordTokenService(
+  token: string,
+  newPassword: string,
+  confirmPassword: string
+) {
+  const payload = verifyToken(token);
+  if (!payload) throw new UnauthorizedException("Unauthorized");
+
+  const { userId, purpose } = payload;
+  if (purpose !== "reset-password") {
+    throw new UnauthorizedException("Unauthorized");
+  }
+
+  const verification = await VerificationModel.findOne({ userId, token });
+  if (!verification) throw new UnauthorizedException("Unauthorized");
+
+  const isTokenExpired = verification.expiresAt < new Date();
+  if (isTokenExpired) {
+    throw new UnauthorizedException("Token expired");
+  }
+
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    throw new UnauthorizedException("Unauthorized");
+  }
+  if (newPassword !== confirmPassword)
+    throw new BadRequestException("Passwords do not match");
+
+  const hashedPassword = await hashValue(newPassword);
+
+  user.password = hashedPassword;
+  await user.save();
+
+  await VerificationModel.findByIdAndDelete(verification._id);
+  return;
+}

@@ -24,3 +24,26 @@ export async function sendEmail(to: string, verificationToken: string) {
     return false;
   }
 }
+
+export async function sendEmailResetPassword(
+  to: string,
+  resetPasswordToken: string
+) {
+  const resetPasswordLink = `${config.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
+  const content = `<p>Click <a href="${resetPasswordLink}">here</a> to reset your password.</p>`;
+  const subject = "Reset Password";
+  const msg = {
+    to,
+    from: `TaskHub <${fromEmail}>`,
+    subject,
+    html: content,
+  };
+  try {
+    await sgMail.send(msg);
+    console.log(`Email sent to successfully`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to send email: ${error}`);
+    return false;
+  }
+}
