@@ -10,6 +10,7 @@ import {
 } from "../controller/auth.controller";
 import { emailValidationMiddleware } from "../middlewares/arject.middleware";
 import {
+  emailSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
@@ -32,11 +33,12 @@ router.post(
 );
 router.post(
   "/reset-password-request",
-  validateRequest({ body: z.string().email() }),
+  validateRequest({ body: emailSchema }),
+  emailValidationMiddleware,
   resetPasswordController
 );
 router.post(
-  "reset-password",
+  "/reset-password",
   validateRequest({ body: resetPasswordSchema }),
   verifyResetPasswordTokenController
 );

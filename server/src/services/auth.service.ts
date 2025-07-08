@@ -182,7 +182,7 @@ export async function resetPasswordService(email: string) {
     throw new BadRequestException("Please verify your email first.");
   }
 
-  const verification = await VerificationModel.findOne({ useId: user._id });
+  const verification = await VerificationModel.findOne({ userId: user._id });
   if (verification && verification.expiresAt > new Date()) {
     throw new BadRequestException("Reset password request already sent");
   }
@@ -208,8 +208,6 @@ export async function resetPasswordService(email: string) {
   if (!isEmailSent) {
     throw new ExternalServerException("Failed to send reset password email");
   }
-
-  return;
 }
 
 export async function resetPasswordTokenService(
@@ -217,7 +215,9 @@ export async function resetPasswordTokenService(
   newPassword: string,
   confirmPassword: string
 ) {
-  const payload = verifyToken(token);
+  // const payload = verifyToken(token);
+  const payload: any = jwt.verify(token, config.JWT_SECRET);
+
   if (!payload) throw new UnauthorizedException("Unauthorized");
 
   const { userId, purpose } = payload;

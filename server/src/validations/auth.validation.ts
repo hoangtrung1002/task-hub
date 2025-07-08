@@ -20,3 +20,7 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, "Password must be at least 8 characters long"),
   confirmPassword: z.string().min(1, "Confirm password is required"),
 });
+
+export const emailSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
