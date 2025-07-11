@@ -1,6 +1,7 @@
 import Header from "@/components/header";
 import Loader from "@/components/loader";
 import Sidebar from "@/components/sidebar/sidebar";
+import CreateWorkspace from "@/components/workspace/create-workspace";
 import { useAuth } from "@/providers/auth-context";
 import type { Workspace } from "@/types";
 import { useState } from "react";
@@ -36,6 +37,10 @@ const DashboardLayout = () => {
           </div>
         </main>
       </div>
+      <CreateWorkspace
+        isCreatingWorkspace={isCreatingWorkspace}
+        setIsCreatingWorkspace={setIsCreatingWorkspace}
+      />
     </div>
   );
 };
