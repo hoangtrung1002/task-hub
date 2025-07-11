@@ -15,18 +15,23 @@ import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
+import { useCreateWorkspace } from "@/hooks/use-workspace";
+import { toast } from "sonner";
+import { useNavigate } from "react-router";
+import type { Workspace } from "@/types";
 
 interface Props {
   isCreatingWorkspace: boolean;
   setIsCreatingWorkspace: (isCreating: boolean) => void;
 }
 
-type WorkspaceForm = z.infer<typeof workspaceSchema>;
+export type WorkspaceForm = z.infer<typeof workspaceSchema>;
 
 const CreateWorkspace = ({
   isCreatingWorkspace,
   setIsCreatingWorkspace,
 }: Props) => {
+  const navigate = useNavigate();
   const form = useForm<WorkspaceForm>({
     resolver: zodResolver(workspaceSchema),
     defaultValues: {
@@ -35,8 +40,21 @@ const CreateWorkspace = ({
       description: "",
     },
   });
-  const isPending = false;
-  const onSubmit = (data: WorkspaceForm) => {};
+  const { mutate, isPending } = useCreateWorkspace();
+  const onSubmit = (data: WorkspaceForm) => {
+    mutate(data, {
+      onSuccess: (data) => {
+        form.reset();
+        setIsCreatingWorkspace(false);
+        toast.success("Workspace created successfully!");
+        navigate(`/workspaces/${data._id}`);
+      },
+      onError: (error: any) => {
+        const errorMessage = error.response?.data?.message;
+        toast.error(errorMessage);
+      },
+    });
+  };
 
   return (
     <Dialog

@@ -2,6 +2,7 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import { config } from "../config/app.config";
 
 export interface JWTPayload {
+  userId?: string;
   purpose: "email-verification" | "reset-password" | "login";
   [key: string]: any; // Allow dynamic props if needed
 }

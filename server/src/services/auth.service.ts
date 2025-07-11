@@ -36,7 +36,7 @@ export async function registerService(body: {
     }).save({ session });
 
     const verificationToken = jwtSign({
-      userId: newUser._id,
+      userId: newUser._id as string,
       purpose: "email-verification",
     });
 
@@ -192,7 +192,7 @@ export async function resetPasswordService(email: string) {
 
   const resetPasswordToken = jwtSign(
     {
-      userId: user._id,
+      userId: user._id as string,
       purpose: "reset-password",
     },
     "15m"
