@@ -68,12 +68,15 @@ export async function loginInService(body: {
   password: string;
 }) {
   const { email, password } = body;
-  const user = await UserModel.findOne({ email }).select("+password");
-  if (!user) throw new BadRequestException("Invalid email or password");
-
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
+    const user = await UserModel.findOne({ email }).select("+password");
+    if (!user) throw new BadRequestException("Invalid email or password");
+
+    const isValidPassword = await compareValue(password, user.password);
+    if (!isValidPassword)
+      throw new BadRequestException("Invalid email or password");
 
     if (!user.isEmailVerified) {
       const existingVerification = await VerificationModel.findOne({
@@ -108,9 +111,6 @@ export async function loginInService(body: {
           );
       }
     }
-    const isValidPassword = compareValue(password, user.password);
-    if (!isValidPassword)
-      throw new BadRequestException("Invalid email or password");
 
     const token = jwtSign({ userId: user._id, purpose: "login" }, "7d");
 

@@ -1,4 +1,5 @@
 import WorkspaceModel from "../models/workspace.model";
+import { BadRequestException } from "../utils/app-error";
 
 export async function createWorkspaceService(
   body: {
@@ -18,4 +19,15 @@ export async function createWorkspaceService(
     members: [{ user: userId, role: "owner", joinedAt: new Date() }],
   });
   return workspace;
+}
+
+export async function getWorkspacesService(userId: string) {
+  const workspaces = await WorkspaceModel.find({ "members.user": userId }).sort(
+    { createdAt: -1 }
+  );
+  if (!workspaces) {
+    throw new BadRequestException("No workspaces found for this user");
+  }
+
+  return workspaces;
 }

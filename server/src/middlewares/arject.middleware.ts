@@ -5,6 +5,11 @@ import { HTTPSTATUS } from "../config/http.config";
 import { ErrorCodeEnum } from "../enums/error-code.enum";
 import { BadRequestException, HttpException } from "../utils/app-error";
 
+export const shouldSkipArcjet = (req: Request) => {
+  const publicRoutes = ["/api/v1/workspaces"];
+  return publicRoutes.includes(req.path);
+};
+
 export const botProtectionMiddleware = async (
   req: Request,
   res: Response,
