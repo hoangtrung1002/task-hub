@@ -1,6 +1,6 @@
 import mongoose, { Document, mongo, ObjectId, Schema } from "mongoose";
 
-interface ProjectDocument extends Document {
+export interface ProjectDocument extends Document {
   title: string;
   description: string;
   workspace: mongoose.Types.ObjectId;

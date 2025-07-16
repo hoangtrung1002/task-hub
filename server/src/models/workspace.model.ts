@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface WorkspaceDocument extends Document {
+export interface WorkspaceDocument extends Document {
   name: string;
   description: string;
   color: string;
