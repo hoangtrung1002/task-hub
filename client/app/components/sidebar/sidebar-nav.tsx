@@ -17,11 +17,12 @@ const SidebarNav = ({
 }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
+
   return (
     <nav className={cn("flex flex-col gap-y-2", className)} {...props}>
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
-        const isActive = location.pathname === item.href;
+        const isActive = location.pathname.includes(item.href);
         const handleClick = () => {
           if (item.href === "/workspaces") {
             navigate(item.href);

@@ -41,6 +41,7 @@ const Header = ({
                     <WorkspaceAvatar
                       color={selectedWorkspace.color}
                       name={selectedWorkspace.name}
+                      size={6}
                     />
                   )}
                   <span className="font-medium">{selectedWorkspace?.name}</span>

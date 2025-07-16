@@ -1,11 +1,12 @@
 interface Props {
   color: string;
   name: string;
+  size?: number;
 }
-const WorkspaceAvatar = ({ color, name }: Props) => {
+const WorkspaceAvatar = ({ color, name, size = 8 }: Props) => {
   return (
     <div
-      className="size-8 rounded flex items-center justify-center"
+      className={`size-${size} rounded flex items-center justify-center`}
       style={{ backgroundColor: color }}
     >
       <span className="text-xs font-medium text-white">
