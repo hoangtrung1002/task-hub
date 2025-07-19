@@ -38,8 +38,8 @@ const DashboardLayout = () => {
       <div className="flex flex-1 flex-col h-full">
         <Header
           onCreateWorkspace={() => setIsCreatingWorkspace(true)}
-          onWorkspaceSelected={() => handleWorkspaceSelected}
-          selectedWorkspace={null}
+          onWorkspaceSelected={handleWorkspaceSelected}
+          selectedWorkspace={currentWorkspace}
         />
         <main className="flex-1 overflow-y-auto h-full w-full">
           <div className="mx-auto container px-2 sm:px-6 lg:px-8 py-0 md:py-8 w-full h-full">

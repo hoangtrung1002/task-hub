@@ -18,12 +18,12 @@ const NotFoundData = ({
       <LayoutGrid className="size-12 mx-auto text-muted-foreground" />
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-        <Button onClick={buttonAction} className="mt-4">
-          <CirclePlus className="size-4" />
-          {buttonText}
-        </Button>
         {description}
       </p>
+      <Button onClick={buttonAction} className="mt-4">
+        <CirclePlus className="size-4" />
+        {buttonText}
+      </Button>
     </div>
   );
 };

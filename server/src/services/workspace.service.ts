@@ -56,7 +56,7 @@ export async function getWorkspaceProjectsService(
   const workspace = await WorkspaceModel.findOne({
     _id: workspaceId,
     "members.user": userId,
-  }).populate("projects");
+  }).populate("members.user", "name email profilePicture");
 
   if (!workspace) throw new NotFoundException("Workspace not found");
 

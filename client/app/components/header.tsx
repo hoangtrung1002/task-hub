@@ -26,7 +26,6 @@ const Header = ({
   selectedWorkspace,
 }: Props) => {
   const { user, logout } = useAuth();
-  // const workspaces = [];
   const { workspaces } = useLoaderData() as { workspaces: Workspace[] };
 
   return (
