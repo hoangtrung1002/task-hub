@@ -1,5 +1,5 @@
-import Loader from "@/components/loader";
 import NotFoundData from "@/components/not-found-data";
+import SkeletonCard from "@/components/skeleton-card";
 import { Button } from "@/components/ui/button";
 import CreateWorkspace from "@/components/workspace/create-workspace";
 import WorkspaceCard from "@/components/workspace/workspace-card";
@@ -10,8 +10,6 @@ import { useState } from "react";
 const Workspaces = () => {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const { data: workspaces, isLoading } = useGetWorkspacesQuery();
-
-  if (isLoading) return <Loader />;
 
   return (
     <>
@@ -24,6 +22,15 @@ const Workspaces = () => {
           </Button>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {isLoading && (
+            <>
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div key={idx} className="space-y-2">
+                  <SkeletonCard />
+                </div>
+              ))}
+            </>
+          )}
           {workspaces?.map((workspace) => (
             <WorkspaceCard key={workspace._id} workspace={workspace} />
           ))}
